@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rock Paper Scissors</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #1f2844, #3b2f63);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    padding: 20px;
+  }
+
+  .game {
+    background: rgba(255, 255, 255, 0.07);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    padding: 32px;
+    width: 100%;
+    max-width: 460px;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+  }
+
+  h1 { font-size: 1.9rem; margin-bottom: 4px; letter-spacing: 1px; }
+  .subtitle { color: #b9b3d6; font-size: 0.9rem; margin-bottom: 24px; }
+
+  .choices { display: flex; justify-content: center; gap: 14px; margin-bottom: 24px; }
+
+  .choice-btn {
+    font-size: 2.4rem;
+    padding: 16px 18px;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.06);
+    cursor: pointer;
+    transition: transform 0.15s, background 0.2s, border-color 0.2s;
+  }
+
+  .choice-btn:hover {
+    transform: translateY(-5px) scale(1.05);
+    background: rgba(255, 255, 255, 0.15);
+    border-color: #ffd166;
+  }
+
+  .choice-btn:active { transform: scale(0.95); }
+
+  .arena {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    margin-bottom: 20px;
+    min-height: 110px;
+  }
+
+  .fighter { text-align: center; }
+  .fighter .label { font-size: 0.8rem; color: #b9b3d6; text-transform: uppercase; letter-spacing: 1px; }
+  .fighter .icon { font-size: 3.4rem; display: block; margin: 6px 0; }
+  .fighter .pick-name { font-weight: 600; }
+
+  .vs { font-size: 1.2rem; font-weight: 700; color: #ffd166; }
+
+  .result {
+    font-size: 1.25rem;
+    font-weight: 700;
+    min-height: 32px;
+    margin-bottom: 18px;
+    transition: color 0.2s;
+  }
+  .result.win  { color: #7bed9f; }
+  .result.lose { color: #ff6b6b; }
+  .result.tie  { color: #ffd166; }
+
+  .scoreboard {
+    display: flex;
+    justify-content: space-around;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 18px;
+  }
+
+  .score-item .value { font-size: 1.5rem; font-weight: 700; }
+  .score-item .name  { font-size: 0.75rem; color: #b9b3d6; text-transform: uppercase; letter-spacing: 1px; }
+
+  .reset-btn {
+    padding: 10px 26px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #fff;
+    background: #ff6b6b;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+  }
+
+  .reset-btn:hover { background: #ee5a5a; }
+  .reset-btn:active { transform: scale(0.96); }
+
+  @keyframes pop {
+    0%   { transform: scale(0.4); opacity: 0; }
+    70%  { transform: scale(1.15); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .pop { animation: pop 0.35s ease-out; }
+</style>
+</head>
+<body>
+
+<div class="game">
+  <h1>Rock Paper Scissors</h1>
+  <p class="subtitle">Choose your weapon!</p>
+
+  <div class="choices">
+    <button class="choice-btn" data-choice="rock"     title="Rock">🪨</button>
+    <button class="choice-btn" data-choice="paper"    title="Paper">📄</button>
+    <button class="choice-btn" data-choice="scissors" title="Scissors">✂️</button>
+  </div>
+
+  <div class="arena">
+    <div class="fighter">
+      <span class="label">You</span>
+      <span class="icon" id="playerIcon">❔</span>
+      <span class="pick-name" id="playerPick">—</span>
+    </div>
+    <div class="vs">VS</div>
+    <div class="fighter">
+      <span class="label">Computer</span>
+      <span class="icon" id="computerIcon">❔</span>
+      <span class="pick-name" id="computerPick">—</span>
+    </div>
+  </div>
+
+  <div class="result" id="result">Make your move!</div>
+
+  <div class="scoreboard">
+    <div class="score-item">
+      <div class="value" id="playerScore">0</div>
+      <div class="name">You</div>
+    </div>
+    <div class="score-item">
+      <div class="value" id="ties">0</div>
+      <div class="name">Ties</div>
+    </div>
+    <div class="score-item">
+      <div class="value" id="computerScore">0</div>
+      <div class="name">Computer</div>
+    </div>
+  </div>
+
+  <button class="reset-btn" id="resetBtn">Reset Game</button>
+</div>
+
+<script>
+  const CHOICES = ["rock", "paper", "scissors"];
+  const ICONS   = { rock: "🪨", paper: "📄", scissors: "✂️" };
+
+  // What each choice beats: rock beats scissors, paper beats rock, scissors beats paper
+  const BEATS = { rock: "scissors", paper: "rock", scissors: "paper" };
+
+  let playerScore = 0;
+  let computerScore = 0;
+  let ties = 0;
+
+  const playerIconEl    = document.getElementById("playerIcon");
+  const computerIconEl  = document.getElementById("computerIcon");
+  const playerPickEl    = document.getElementById("playerPick");
+  const computerPickEl  = document.getElementById("computerPick");
+  const resultEl        = document.getElementById("result");
+  const playerScoreEl   = document.getElementById("playerScore");
+  const computerScoreEl = document.getElementById("computerScore");
+  const tiesEl          = document.getElementById("ties");
+
+  function computerChoice() {
+    return CHOICES[Math.floor(Math.random() * CHOICES.length)];
+  }
+
+  function play(playerChoice) {
+    const compChoice = computerChoice();
+
+    // Update the arena
+    playerIconEl.textContent   = ICONS[playerChoice];
+    computerIconEl.textContent = ICONS[compChoice];
+    playerPickEl.textContent   = capitalize(playerChoice);
+    computerPickEl.textContent = capitalize(compChoice);
+
+    playerIconEl.classList.remove("pop");
+    computerIconEl.classList.remove("pop");
+    void playerIconEl.offsetWidth; // restart animation
+    void computerIconEl.offsetWidth;
+    playerIconEl.classList.add("pop");
+    computerIconEl.classList.add("pop");
+
+    // Determine the winner
+    resultEl.classList.remove("win", "lose", "tie");
+
+    if (playerChoice === compChoice) {
+      ties++;
+      resultEl.textContent = "It's a tie!";
+      resultEl.classList.add("tie");
+    } else if (BEATS[playerChoice] === compChoice) {
+      playerScore++;
+      resultEl.textContent = "You win! 🎉";
+      resultEl.classList.add("win");
+    } else {
+      computerScore++;
+      resultEl.textContent = "You lose! 😢";
+      resultEl.classList.add("lose");
+    }
+
+    playerScoreEl.textContent   = playerScore;
+    computerScoreEl.textContent = computerScore;
+    tiesEl.textContent          = ties;
+  }
+
+  function resetGame() {
+    playerScore = 0;
+    computerScore = 0;
+    ties = 0;
+    playerScoreEl.textContent   = "0";
+    computerScoreEl.textContent = "0";
+    tiesEl.textContent          = "0";
+    playerIconEl.textContent    = "❔";
+    computerIconEl.textContent  = "❔";
+    playerPickEl.textContent    = "—";
+    computerPickEl.textContent  = "—";
+    resultEl.textContent        = "Make your move!";
+    resultEl.classList.remove("win", "lose", "tie");
+  }
+
+  function capitalize(word) {
+    return word.charAt(0).toUpperCase() + word.slice(1);
+  }
+
+  // Wire up events
+  document.querySelectorAll(".choice-btn").forEach(btn => {
+    btn.addEventListener("click", () => play(btn.dataset.choice));
+  });
+  document.getElementById("resetBtn").addEventListener("click", resetGame);
+
+  // Keyboard support: 1 = rock, 2 = paper, 3 = scissors
+  document.addEventListener("keydown", e => {
+    if (e.key === "1") play("rock");
+    if (e.key === "2") play("paper");
+    if (e.key === "3") play("scissors");
+    if (e.key.toLowerCase() === "r") resetGame();
+  });
+</script>
+
+</body>
+</html>
